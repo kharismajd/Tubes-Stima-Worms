@@ -34,7 +34,13 @@ public class Bot {
         Worm enemyWorm = getFirstWormInRange();
         if (enemyWorm != null) {
             Direction direction = resolveDirection(currentWorm.position, enemyWorm.position);
-            return new ShootCommand(direction);
+            if (currentWorm.id == 3 && currentWorm.snowballs.count > 0) {
+                return new SnowballCommand(enemyWorm.position.x, enemyWorm.position.y);
+            } else if (currentWorm.id == 2 && currentWorm.bananaBombs.count > 0) {
+                return new BananaCommand(enemyWorm.position.x, enemyWorm.position.y);
+            } else {
+                return new ShootCommand(direction);
+            }
         }
 
         List<Cell> surroundingBlocks = getSurroundingCells(currentWorm.position.x, currentWorm.position.y);
