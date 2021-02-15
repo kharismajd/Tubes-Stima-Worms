@@ -13,6 +13,9 @@ public class GameState {
     @SerializedName("mapSize")
     public int mapSize;
 
+    @SerializedName("remainingWormSelections")
+    public int remainingWormSelections;
+
     @SerializedName("currentWormId")
     public int currentWormId;
 
