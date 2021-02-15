@@ -45,13 +45,45 @@ public class Bot {
             Position lempar = greedyLemparan(currentWorm.bananaBombs.range, currentWorm.bananaBombs.damageRadius, currentWorm.bananaBombs.damage, 2);
             int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
             if (dist > 0) {
-                if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.bananaBombs.range)) {
-                    return new BananaCommand(lempar.x, lempar.y);
-                } else {
+                int damage = 0;
+                int jmlTarget = 0;
+                int jmlMusuh = 0;
+                for (Worm musuh : opponent.worms) {
+                    if (musuh.health > 0) {
+                        jmlMusuh += 1;
+                        int deltaX = lempar.x-musuh.position.x;
+                        int deltaY = lempar.y-musuh.position.y;
+                        if (isDalamRadiusLemparan(deltaX, deltaY, currentWorm.bananaBombs.damageRadius)){
+                            damage += BananaBombDmg(deltaX, deltaY, currentWorm.bananaBombs.damage, currentWorm.bananaBombs.damageRadius);
+                            jmlTarget += 1;
+                        }
+                    }
+                }
+                if ((damage < 10 && jmlTarget == 1) && !dalamBahaya(currentWorm)) {
+                    Worm target = cariMusuhTerdekatGlobal();
+                    if (bisaDitembak(currentWorm.position.x, currentWorm.position.y, target.position.x, target.position.y)) {
+                        Direction direction = resolveDirection(currentWorm.position, target.position);
+                        return new ShootCommand(direction);
+                    } else {
+                        target = cariTembakTerdekat();
+                        if (target != null) {
+                            Direction direction = resolveDirection(currentWorm.position, target.position);
+                            return new ShootCommand(direction);
+                        }
+                    }
+
                     Position next = jalanKe(lempar.x, lempar.y);
+                    System.out.println("BANANA MOVE TO (" + next.x + ", " + next.y + ")");
                     Cell block = gameState.map[next.y][next.x];
 
-                    return digAndMoveTo(block);
+                    if (block.type == CellType.AIR) {
+                        return new MoveCommand(block.x, block.y);
+                    } else if (block.type == CellType.DIRT) {
+                        return new DigCommand(block.x, block.y);
+                    }
+                } else if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.bananaBombs.range)) {
+                    System.out.println("LEMPAR BANANA DONG");
+                    return new BananaCommand(lempar.x, lempar.y);
                 }
             }
         } else if (adaSnowball(currentWorm)) {
@@ -59,8 +91,8 @@ public class Bot {
             int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
             if (dist > 0) {
                 if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
+                    System.out.println("LEMPAR SNOWBALL DONG");
                     return new SnowballCommand(lempar.x, lempar.y);
-
                 }
             }
         }
@@ -305,7 +337,8 @@ public class Bot {
                 countMusuh += 1;
             }
         }
-        return ((dalamBahaya(currentWorm)) || (jmlMusuh >= countMusuh-1 && jmlMusuh > jmlTeman && 17*(jmlMusuh-jmlTeman) > curr_max));
+        // return ((dalamBahaya(currentWorm)) || (jmlMusuh >= countMusuh-1 && jmlMusuh > jmlTeman && 17*(jmlMusuh-jmlTeman) > curr_max));
+        return (jmlMusuh > jmlTeman && 17*(jmlMusuh-jmlTeman) > curr_max);
     }
 
     private boolean layakBanana(int totalDamage, int dirt, int friendlyFire, int jmlMusuh, int curr_max) {
@@ -315,7 +348,7 @@ public class Bot {
                 countMusuh += 1;
             }
         }
-        if (jmlMusuh >= countMusuh-1 || gameState.currentRound < 60 || dalamBahaya(currentWorm)) {
+        if (((totalDamage < 10 && jmlMusuh == 1) || gameState.currentRound < 60) && !dalamBahaya(currentWorm)) {
             return false;
         } else {
             return (2*(totalDamage+dirt-friendlyFire) > curr_max);
@@ -537,118 +570,93 @@ public class Bot {
     }
 
     private Cell shortestPath(Cell dest) {
-        int originX = currentWorm.position.x;
-        int originY = currentWorm.position.y;
-        if (originX < dest.x && originY < dest.y) {
-            originX += 1;
-            originY += 1;
-            if (getCellFromCoordinate(originX, originY).type == CellType.DIRT) {
-                if (getCellFromCoordinate(originX - 1, originY).type == CellType.DIRT) {
-                    if (getCellFromCoordinate(originX, originY - 1).type == CellType.DIRT) {
+        int dest_x = dest.x;
+        int dest_y = dest.y;
+        int worm_x = currentWorm.position.x;
+        int worm_y = currentWorm.position.y;
+        int deltaX = 0;
+        int deltaY = 0;
 
-                    } else {
-                        originY -= 1;
-                    }
-                } else {
-                    originX -= 1;
-                }
-            }
-        } else if (originX < dest.x && originY > dest.y) {
-            originX += 1;
-            originY -= 1;
-            if (getCellFromCoordinate(originX, originY).type == CellType.DIRT) {
-                if (getCellFromCoordinate(originX - 1, originY).type == CellType.DIRT) {
-                    if (getCellFromCoordinate(originX, originY + 1).type == CellType.DIRT) {
+        if (dest_x > worm_x) {
+            deltaX += 1;
+        } else if (dest_x < worm_x) {
+            deltaX -= 1;
+        }
+        if (dest_y > worm_y) {
+            deltaY += 1;
+        } else if (dest_y < worm_y) {
+            deltaY -= 1;
+        }
 
-                    } else {
-                        originY += 1;
-                    }
-                } else {
-                    originX -= 1;
-                }
-            }
-        } else if (originX > dest.x && originY > dest.y) {
-            originX -= 1;
-            originY -= 1;
-            if (getCellFromCoordinate(originX, originY).type == CellType.DIRT) {
-                if (getCellFromCoordinate(originX + 1, originY).type == CellType.DIRT) {
-                    if (getCellFromCoordinate(originX, originY + 1).type == CellType.DIRT) {
+        Cell nextSimple = gameState.map[worm_y+deltaY][worm_x+deltaX];
+        Cell next = nextSimple;
+        Cell next2 = next;
 
-                    } else {
-                        originY += 1;
+        if (next.type != CellType.AIR) {
+            for (int j = -1; j <= 1; j++) {
+                for (int i = -1; i <= 1; i++) {
+                    int new_x = deltaX+i;
+                    int new_y = deltaY+j;
+                    if ((i*i+j*j < 2) && Math.round(pythagoras(new_x, new_y)) <= 1 && !(new_x == 0 && new_y == 0)) {
+                        if (gameState.map[worm_y+new_y][worm_x+new_x].type == CellType.AIR) {
+                            // System.out.println("WORM ID " + currentWorm.id + " MELIPIR KE (" + new_x + ", " + new_y + ")");
+                            next = gameState.map[worm_y+new_y][worm_x+new_x];
+                        }
                     }
-                } else {
-                    originX += 1;
-                }
-            }
-        } else if (originX > dest.x && originY < dest.y) {
-            originX -= 1;
-            originY += 1;
-            if (getCellFromCoordinate(originX, originY).type == CellType.DIRT) {
-                if (getCellFromCoordinate(originX + 1, originY).type == CellType.DIRT) {
-                    if (getCellFromCoordinate(originX, originY - 1).type == CellType.DIRT) {
-
-                    } else {
-                        originY -= 1;
-                    }
-                } else {
-                    originX += 1;
-                }
-            }
-        } else if (originY < dest.y) {
-            originY += 1;
-            if (getCellFromCoordinate(originX, originY).type == CellType.DIRT) {
-                if (getCellFromCoordinate(originX + 1, originY).type == CellType.DIRT) {
-                    if (getCellFromCoordinate(originX - 1, originY).type == CellType.DIRT) {
-
-                    } else {
-                        originX -= 1;
-                    }
-                } else {
-                    originX += 1;
-                }
-            }
-        } else if (originY > dest.y) {
-            originY -= 1;
-            if (getCellFromCoordinate(originX, originY).type == CellType.DIRT) {
-                if (getCellFromCoordinate(originX + 1, originY).type == CellType.DIRT) {
-                    if (getCellFromCoordinate(originX - 1, originY).type == CellType.DIRT) {
-
-                    } else {
-                        originX -= 1;
-                    }
-                } else {
-                    originX += 1;
-                }
-            }
-        } else if (originX < dest.x) {
-            originX += 1;
-            if (getCellFromCoordinate(originX, originY).type == CellType.DIRT) {
-                if (getCellFromCoordinate(originX, originY + 1).type == CellType.DIRT) {
-                    if (getCellFromCoordinate(originX, originY - 1).type == CellType.DIRT) {
-
-                    } else {
-                        originY -= 1;
-                    }
-                } else {
-                    originY += 1;
-                }
-            }
-        } else if (originX > dest.x) {
-            originX -= 1;
-            if (getCellFromCoordinate(originX, originY).type == CellType.DIRT) {
-                if (getCellFromCoordinate(originX, originY + 1).type == CellType.DIRT) {
-                    if (getCellFromCoordinate(originX, originY - 1).type == CellType.DIRT) {
-
-                    } else {
-                        originY -= 1;
-                    }
-                } else {
-                    originY += 1;
                 }
             }
         }
-        return getCellFromCoordinate(originX, originY);
+
+        int i = 0;
+        while (i < 5 && !(next.x == next2.x && next.y == next2.y)) {
+             next2 = shortestPathRun(next2, dest);
+             i++;
+        }
+        if (i == 5) {
+            return next;
+        } else {
+            return nextSimple;
+        }
+    }
+
+    private Cell shortestPathRun(Cell asal, Cell dest) {
+        int dest_x = dest.x;
+        int dest_y = dest.y;
+        int worm_x = asal.x;
+        int worm_y = asal.y;
+        int deltaX = 0;
+        int deltaY = 0;
+
+        if (dest_x > worm_x) {
+            deltaX += 1;
+        } else if (dest_x < worm_x) {
+            deltaX -= 1;
+        }
+        if (dest_y > worm_y) {
+            deltaY += 1;
+        } else if (dest_y < worm_y) {
+            deltaY -= 1;
+        }
+
+        Cell next = gameState.map[worm_y+deltaY][worm_x+deltaX];
+
+        if (next.type == CellType.AIR) {
+            return next;
+        } else {
+            for (int j = -1; j <= 1; j++) {
+                for (int i = -1; i <= 1; i++) {
+                    int new_x = deltaX+i;
+                    int new_y = deltaY+j;
+                    if (Math.round(pythagoras(new_x, new_y)) <= 1 && !(new_x == 0 && new_y == 0)) {
+                        if (gameState.map[worm_y+new_y][worm_x+new_x].type == CellType.AIR) {
+                            return gameState.map[worm_y+new_y][worm_x+new_x];
+                        }
+                    }
+                }
+            }
+
+            return next;
+        }
     }
 
     private Command digAndMoveTo(Cell dest) {
