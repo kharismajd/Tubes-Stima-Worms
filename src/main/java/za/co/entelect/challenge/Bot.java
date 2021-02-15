@@ -123,10 +123,7 @@ public class Bot {
         } */
 
         target = cariMusuhTerdekatGlobal();
-        Position next = followWorm(target);
-        Cell block = gameState.map[next.y][next.x];
-
-        return digAndMoveTo(block);
+        return digAndMoveTo(getNearestShootingPosition(target));
     }
 
     private double jarak(int x1, int y1, int x2, int y2) {
@@ -565,8 +562,12 @@ public class Bot {
         return (Math.sqrt(Math.pow(aX - bX, 2) + Math.pow(aY - bY, 2)));
     }
 
+    private int euclideanDistance(int aX, int aY, int bX, int bY) {
+        return (int)(Math.sqrt(Math.pow(aX - bX, 2) + Math.pow(aY - bY, 2)));
+    }
+
     private Cell getCellFromCoordinate(int x, int y) {
-        return gameCells.stream().filter(c -> c.x == x && c.y == y).collect(Collectors.toList()).get(0);
+        return gameState.map[y][x];
     }
 
     private Cell shortestPath(Cell dest) {
@@ -592,13 +593,13 @@ public class Bot {
         Cell next = nextSimple;
         Cell next2 = next;
 
-        if (next.type != CellType.AIR) {
+        if (next.type != CellType.AIR || next.occupier != null) {
             for (int j = -1; j <= 1; j++) {
                 for (int i = -1; i <= 1; i++) {
                     int new_x = deltaX+i;
                     int new_y = deltaY+j;
                     if ((i*i+j*j < 2) && Math.round(pythagoras(new_x, new_y)) <= 1 && !(new_x == 0 && new_y == 0)) {
-                        if (gameState.map[worm_y+new_y][worm_x+new_x].type == CellType.AIR) {
+                        if (gameState.map[worm_y+new_y][worm_x+new_x].type == CellType.AIR && gameState.map[worm_y+new_y][worm_x+new_x].occupier == null) {
                             // System.out.println("WORM ID " + currentWorm.id + " MELIPIR KE (" + new_x + ", " + new_y + ")");
                             next = gameState.map[worm_y+new_y][worm_x+new_x];
                         }
@@ -609,8 +610,8 @@ public class Bot {
 
         int i = 0;
         while (i < 5 && !(next.x == next2.x && next.y == next2.y)) {
-             next2 = shortestPathRun(next2, dest);
-             i++;
+            next2 = shortestPathRun(next2, dest);
+            i++;
         }
         if (i == 5) {
             return next;
@@ -640,7 +641,7 @@ public class Bot {
 
         Cell next = gameState.map[worm_y+deltaY][worm_x+deltaX];
 
-        if (next.type == CellType.AIR) {
+        if (next.type == CellType.AIR && next.occupier == null) {
             return next;
         } else {
             for (int j = -1; j <= 1; j++) {
@@ -648,7 +649,7 @@ public class Bot {
                     int new_x = deltaX+i;
                     int new_y = deltaY+j;
                     if (Math.round(pythagoras(new_x, new_y)) <= 1 && !(new_x == 0 && new_y == 0)) {
-                        if (gameState.map[worm_y+new_y][worm_x+new_x].type == CellType.AIR) {
+                        if (gameState.map[worm_y+new_y][worm_x+new_x].type == CellType.AIR && gameState.map[worm_y+new_y][worm_x+new_x].occupier == null) {
                             return gameState.map[worm_y+new_y][worm_x+new_x];
                         }
                     }
@@ -692,5 +693,70 @@ public class Bot {
         }
 
         return digAndMoveTo(dest.get(0));
+    }
+
+    private List<Cell> getShootingPosition(Worm target) {
+        ArrayList<ArrayList<Cell>> cells = new ArrayList<ArrayList<Cell>>();
+        ArrayList<Position> dir = new ArrayList<>();
+        for (int x = -1; x <= 1 ; x++) {
+            for (int y = -1; y <= 1 ; y++) {
+                if (x == 0 && y == 0) {
+                } else {
+                    Position pos = new Position(x,y);
+                    dir.add(pos);
+                }
+            }
+        }
+
+        for (Position direction: dir) {
+            ArrayList<Cell> cell_candidate = new ArrayList<>();
+            int position_x = target.position.x + direction.x;
+            int position_y = target.position.y + direction.y;
+            boolean occupied = false;
+
+            while (doubleEuclideanDistance(position_x, position_y, target.position.x, target.position.y) <= 2
+                    && isValidCell(position_x, position_y)
+                    && !occupied) {
+                occupied = false;
+                if (getCellFromCoordinate(position_x, position_y).occupier == null) {
+                    if (isValidCell(position_x, position_y)) {
+                        cell_candidate.add(getCellFromCoordinate(position_x, position_y));
+                    }
+                } else {
+                    occupied = true;
+                }
+
+                position_x += direction.x;
+                position_y += direction.y;
+            }
+
+            if (!occupied) {
+                cells.add(cell_candidate);
+            }
+
+        }
+
+        List<Cell> flat_cells = cells.stream().flatMap(Collection::stream).collect(Collectors.toList());
+        return flat_cells;
+    }
+
+    private Cell getNearestShootingPosition(Worm target) {
+        boolean sorted = false;
+        ArrayList<Double> distance = new ArrayList<>();
+        List<Cell> cells = getShootingPosition(target);
+        for (Cell cell:cells) {
+            distance.add(doubleEuclideanDistance(currentWorm.position.x, currentWorm.position.y, cell.x, cell.y));
+        }
+        while(!sorted) {
+            sorted = true;
+            for (int i = 0; i < cells.size() - 1; i++) {
+                if (distance.get(i) > distance.get(i+1)) {
+                    swap(distance, i, i + 1);
+                    swap(cells, i, i + 1);
+                    sorted = false;
+                }
+            }
+        }
+        return cells.get(0);
     }
 }
