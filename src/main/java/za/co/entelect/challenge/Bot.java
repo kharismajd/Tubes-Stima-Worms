@@ -45,43 +45,7 @@ public class Bot {
             Position lempar = greedyLemparan(currentWorm.bananaBombs.range, currentWorm.bananaBombs.damageRadius, currentWorm.bananaBombs.damage, 2);
             int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
             if (dist > 0) {
-                int damage = 0;
-                int jmlTarget = 0;
-                int jmlMusuh = 0;
-                for (Worm musuh : opponent.worms) {
-                    if (musuh.health > 0) {
-                        jmlMusuh += 1;
-                        int deltaX = lempar.x-musuh.position.x;
-                        int deltaY = lempar.y-musuh.position.y;
-                        if (isDalamRadiusLemparan(deltaX, deltaY, currentWorm.bananaBombs.damageRadius)){
-                            damage += BananaBombDmg(deltaX, deltaY, currentWorm.bananaBombs.damage, currentWorm.bananaBombs.damageRadius);
-                            jmlTarget += 1;
-                        }
-                    }
-                }
-                if ((damage < 10 && jmlTarget == 1) && !dalamBahaya(currentWorm)) {
-                    Worm target = cariMusuhTerdekatGlobal();
-                    if (bisaDitembak(currentWorm.position.x, currentWorm.position.y, target.position.x, target.position.y)) {
-                        Direction direction = resolveDirection(currentWorm.position, target.position);
-                        return new ShootCommand(direction);
-                    } else {
-                        target = cariTembakTerdekat();
-                        if (target != null) {
-                            Direction direction = resolveDirection(currentWorm.position, target.position);
-                            return new ShootCommand(direction);
-                        }
-                    }
-
-                    Position next = jalanKe(lempar.x, lempar.y);
-                    System.out.println("BANANA MOVE TO (" + next.x + ", " + next.y + ")");
-                    Cell block = gameState.map[next.y][next.x];
-
-                    if (block.type == CellType.AIR) {
-                        return new MoveCommand(block.x, block.y);
-                    } else if (block.type == CellType.DIRT) {
-                        return new DigCommand(block.x, block.y);
-                    }
-                } else if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.bananaBombs.range)) {
+                if (bananaEffective(lempar) && isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.bananaBombs.range)) {
                     System.out.println("LEMPAR BANANA DONG");
                     return new BananaCommand(lempar.x, lempar.y);
                 }
@@ -90,7 +54,7 @@ public class Bot {
             Position lempar = greedyLemparan(currentWorm.snowballs.range, currentWorm.snowballs.freezeRadius, 0, 3);
             int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
             if (dist > 0) {
-                if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
+                if (snowballEffective(lempar) && isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
                     System.out.println("LEMPAR SNOWBALL DONG");
                     return new SnowballCommand(lempar.x, lempar.y);
                 }
@@ -108,19 +72,6 @@ public class Bot {
                 return new ShootCommand(direction);
             }
         }
-
-        /* Position center = new Position(16,16);
-        Cell block;
-        if (center.x == currentWorm.position.x && center.y == currentWorm.position.y) {
-            List<Cell> surroundingBlocks = getSurroundingCells(currentWorm.position.x, currentWorm.position.y);
-            int cellIdx = random.nextInt(surroundingBlocks.size());
-            block = surroundingBlocks.get(cellIdx);
-        } else {
-            Direction direction = resolveDirection(currentWorm.position, center);
-            int goToX = direction.x+currentWorm.position.x;
-            int goToY = direction.y+currentWorm.position.y;
-            block = gameState.map[goToY][goToX];
-        } */
 
         target = cariMusuhTerdekatGlobal();
         return digAndMoveTo(getNearestShootingPosition(target));
@@ -352,6 +303,14 @@ public class Bot {
         }
     }
 
+    private boolean snowballEffective(Position lempar) {
+        return true;
+    }
+
+    private boolean bananaEffective(Position lempar) {
+        return true;
+    }
+
     private boolean dalamBahaya(MyWorm cworm) {
         return cworm.health < 40;
     }
@@ -453,6 +412,7 @@ public class Bot {
                         maxPts = 17*(freezeMusuh-freezeTeman);
                         bestPos.x = target.position.x;
                         bestPos.y = target.position.y;
+                        System.out.println("LAYAK DONG");
                     }
                 } else if (id == 2) {
                     if (layakBanana(attackDmg, countDirt, penaltyDmg, countMusuh, maxPts)) {
