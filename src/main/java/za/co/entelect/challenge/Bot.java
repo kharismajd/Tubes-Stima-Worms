@@ -622,11 +622,14 @@ public class Bot {
 
     private Command digAndMoveTo(Cell dest) {
         Cell path = shortestPath(dest);
-
-        if (path.type == CellType.DIRT) {
-            return new DigCommand(path.x, path.y);
+        if (path != null) {
+            if (path.type == CellType.DIRT) {
+                return new DigCommand(path.x, path.y);
+            } else {
+                return new MoveCommand(path.x, path.y);
+            }
         } else {
-            return new MoveCommand(path.x, path.y);
+            return new DoNothingCommand();
         }
     }
 
@@ -674,11 +677,10 @@ public class Bot {
             int position_y = target.position.y + direction.y;
             boolean occupied = false;
 
-            while (doubleEuclideanDistance(position_x, position_y, target.position.x, target.position.y) <= 2
+            while (doubleEuclideanDistance(position_x, position_y, target.position.x, target.position.y) <= 3
                     && isValidCell(position_x, position_y)
                     && !occupied) {
-                occupied = false;
-                if (getCellFromCoordinate(position_x, position_y).occupier == null) {
+                if (getCellFromCoordinate(position_x, position_y).occupier == null && bisaDitembak(target.position.x, target.position.y, position_x, position_y)) {
                     if (isValidCell(position_x, position_y)) {
                         cell_candidate.add(getCellFromCoordinate(position_x, position_y));
                     }
@@ -704,6 +706,9 @@ public class Bot {
         boolean sorted = false;
         ArrayList<Double> distance = new ArrayList<>();
         List<Cell> cells = getShootingPosition(target);
+        if (cells.size() == 0) {
+            return null;
+        }
         for (Cell cell:cells) {
             distance.add(doubleEuclideanDistance(currentWorm.position.x, currentWorm.position.y, cell.x, cell.y));
         }
