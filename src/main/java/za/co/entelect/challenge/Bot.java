@@ -767,7 +767,31 @@ public class Bot {
         return null;
     }
 
-    private List<Cell> enemyBananaZone() {
+    private List<Cell> bananaImpact(Worm myworm) {
+        List<Cell> map_cell = getCells();
+        List<Cell> impact_cells = new ArrayList<>();
+        int banana_radius = 2;
+        for (Cell cell : map_cell) {
+            if (euclideanDistance(myworm.position.x, myworm.position.y, cell.x, cell.y) <= banana_radius) {
+                impact_cells.add(cell);
+            }
+        }
+        return impact_cells;
+    }
+
+    private List<Cell> snowballImpact(Worm myworm) {
+        List<Cell> map_cell = getCells();
+        List<Cell> impact_cells = new ArrayList<>();
+        int snowball_radius = 1;
+        for (Cell cell : map_cell) {
+            if (euclideanDistance(myworm.position.x, myworm.position.y, cell.x, cell.y) <= snowball_radius) {
+                impact_cells.add(cell);
+            }
+        }
+        return impact_cells;
+    }
+
+    private boolean isInEnemyBananaZone(Worm myworm) {
         Worm enemy_agent = null;
         for(Worm opponent:opponent.worms) {
             if (opponent.id == 2) {
@@ -775,51 +799,12 @@ public class Bot {
             }
         }
         if (enemy_agent.health > 0) {
-            List<Cell> map_cells = getCells();
-            List<Cell> banana_zone = new ArrayList<>();
+            List<Cell> banana_impact = bananaImpact(myworm);
             int enemy_agent_x = enemy_agent.position.x;
             int enemy_agent_y = enemy_agent.position.y;
             int banana_range = 5;
-            for (Cell cell : map_cells) {
+            for (Cell cell : banana_impact) {
                 if (euclideanDistance(cell.x, cell.y, enemy_agent_x, enemy_agent_y) <= banana_range) {
-                    banana_zone.add(cell);
-                }
-            }
-            return banana_zone;
-        } else {
-            return null;
-        }
-    }
-
-    private List<Cell> enemySnowballZone() {
-        Worm enemy_tech = null;
-        for (Worm opponent : opponent.worms) {
-            if (opponent.id == 3) {
-                enemy_tech = opponent;
-            }
-        }
-        if (enemy_tech.health > 0) {
-            List<Cell> map_cells = getCells();
-            List<Cell> snowball_zone = new ArrayList<>();
-            int enemy_tech_x = enemy_tech.position.x;
-            int enemy_tech_y = enemy_tech.position.y;
-            int snowball_range = 5;
-            for (Cell cell : map_cells) {
-                if (euclideanDistance(cell.x, cell.y, enemy_tech_x, enemy_tech_y) <= snowball_range) {
-                    snowball_zone.add(cell);
-                }
-            }
-            return snowball_zone;
-        } else {
-            return null;
-        }
-    }
-
-    private boolean isInEnemyBananaZone(Worm myworm) {
-        List<Cell> enemy_banana_zone = enemyBananaZone();
-        if (enemy_banana_zone != null) {
-            for (Cell cell : enemy_banana_zone) {
-                if (cell.x == myworm.position.x && cell.y == myworm.position.y) {
                     return true;
                 }
             }
@@ -830,10 +815,19 @@ public class Bot {
     }
 
     private boolean isInEnemySnowballZone(Worm myworm) {
-        List<Cell> enemy_snowball_zone = enemySnowballZone();
-        if (enemy_snowball_zone != null) {
-            for (Cell cell : enemy_snowball_zone) {
-                if (cell.x == myworm.position.x && cell.y == myworm.position.y) {
+        Worm enemy_tech = null;
+        for(Worm opponent:opponent.worms) {
+            if (opponent.id == 3) {
+                enemy_tech = opponent;
+            }
+        }
+        if (enemy_tech.health > 0) {
+            List<Cell> snowball_impact = snowballImpact(myworm);
+            int enemy_tech_x = enemy_tech.position.x;
+            int enemy_tech_y = enemy_tech.position.y;
+            int snowball_range = 5;
+            for (Cell cell : snowball_impact) {
+                if (euclideanDistance(cell.x, cell.y, enemy_tech_x, enemy_tech_y) <= snowball_range) {
                     return true;
                 }
             }
