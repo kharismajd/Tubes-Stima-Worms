@@ -674,8 +674,8 @@ public class Bot {
             while (doubleEuclideanDistance(position_x, position_y, target.position.x, target.position.y) <= 3
                     && isValidCell(position_x, position_y)
                     && !occupied) {
-                if (getCellFromCoordinate(position_x, position_y).occupier == null && bisaDitembak(target.position.x, target.position.y, position_x, position_y)) {
-                    if (isValidCell(position_x, position_y)) {
+                if (getCellFromCoordinate(position_x, position_y).occupier == null || getCellFromCoordinate(position_x, position_y).occupier == currentWorm) {
+                    if (isValidCell(position_x, position_y) && bisaDitembak(target.position.x, target.position.y, position_x, position_y)) {
                         cell_candidate.add(getCellFromCoordinate(position_x, position_y));
                     }
                 } else {
