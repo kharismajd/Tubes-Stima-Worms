@@ -278,38 +278,63 @@ public class Bot {
         return (int) Math.round(damage-dist*(damage/(radius+1)));
     }
 
-    private boolean layakSnowball(int jmlMusuh, int jmlTeman, int add_time, int time_max, int curr_max) {
-        if ((jmlMusuh > jmlTeman) && ((17*(jmlMusuh-jmlTeman)) > curr_max)) {
+    private boolean layakSnowball(int jmlMusuh, int jmlTeman, int add_time, int time_max, int tot_health, int health_max, int curr_max) {
+        boolean layakJml = jmlMusuh > jmlTeman;
+        boolean layakTime = add_time > time_max;
+        boolean equalTime = add_time == time_max;
+        boolean layakPts = (17*(jmlMusuh-jmlTeman)) > curr_max;
+        boolean equalPts = (17*(jmlMusuh-jmlTeman)) == curr_max;
+        boolean layakHealth = tot_health > health_max;
+        if (layakJml && layakPts) {
             return true;
-        } else if ((jmlMusuh > jmlTeman) && ((17*(jmlMusuh-jmlTeman)) == curr_max)) {
-            return (add_time > time_max);
+        } else if (layakJml && equalPts && layakTime) {
+            return true;
         } else {
-            return false;
+            return (layakJml && equalPts && equalTime && layakHealth);
         }
     }
 
-    private boolean layakBanana(int totalDamage, int dirt, int friendlyFire, int jmlMusuh, int curr_max) {
+    private boolean layakBanana(int totalDamage, int dirt, int friendlyFire, int jmlMusuh, int tot_health, int health_max, int curr_max) {
         int countMusuh = 0;
         for (Worm musuh : opponent.worms) {
             if (musuh.health > 0) {
                 countMusuh += 1;
             }
         }
-        if (((totalDamage < 10 && jmlMusuh == 1) || gameState.currentRound < 60 || (countMusuh-jmlMusuh) > 1) && !dalamBahaya(currentWorm)) {
+        boolean layakDamage = totalDamage >= 10;
+        boolean earlyGame = gameState.currentRound < 60;
+        boolean layakJml = (countMusuh-jmlMusuh) < 2;
+        boolean layakPts = (2*(totalDamage+dirt-friendlyFire) > curr_max);
+        boolean equalPts = (2*(totalDamage+dirt-friendlyFire) == curr_max);
+        boolean layakHealth = tot_health > health_max;
+        if (!(layakDamage && layakJml) && (earlyGame || !dalamBahaya(currentWorm))) {
             return false;
+        } else if (layakPts && layakDamage && layakJml) {
+            return true;
         } else {
-            return (2*(totalDamage+dirt-friendlyFire) > curr_max);
+            return (layakHealth && equalPts && layakDamage && layakJml);
         }
     }
 
     private boolean dalamBahaya(MyWorm cworm) {
-        return cworm.health < 40;
+        int penembak = 0;
+        int countMusuh = 0;
+        for (Worm musuh : opponent.worms) {
+            if (musuh.health > 0) {
+                countMusuh += 1;
+                if (bisaDitembak(musuh.position.x, musuh.position.y, currentWorm.position.x, currentWorm.position.y)) {
+                    penembak += 1;
+                }
+            }
+        }
+        return ((cworm.health < 40) || (countMusuh-penembak < 2));
     }
 
     private Position greedyLemparan(int range, int radius, int damage, int id) {
         Position bestPos = new Position(currentWorm.position.x, currentWorm.position.y);
         int maxPts = 0;
         int maxTime = 0;
+        int maxHealth = 0;
 
         /* GREEDY VERSION 1
         List<Cell> cellLemparan = dalamRangeLemparan(range);
@@ -372,6 +397,7 @@ public class Bot {
                 int attackDmg = 0;
                 int countDirt = 0;
                 int freezeTime = 0;
+                int totalHealth = 0;
                 List<Cell> cellImpact = dalamRadiusLemparan(target.position.x, target.position.y, radius);
                 for (Cell impact : cellImpact) {
                     if (gameState.map[impact.y][impact.x].type == CellType.DIRT) {
@@ -379,11 +405,10 @@ public class Bot {
                     } else if (bisaDilempar(impact.x, impact.y)) {
                         for (Worm musuh : opponent.worms) {
                             if (musuh.health > 0 && musuh.position.x == impact.x && musuh.position.y == impact.y) {
-                                if (musuh.roundsUntilUnfrozen <= 1) {
-                                    freezeMusuh += 1;
-                                }
                                 freezeTime += 5-musuh.roundsUntilUnfrozen;
+                                freezeMusuh += 1;
                                 countMusuh += 1;
+                                totalHealth += musuh.health;
                                 attackDmg += BananaBombDmg(target.position.x-impact.x,target.position.y-impact.y, damage, radius);
                                 if (attackDmg > musuh.health) {
                                     attackDmg += 20;
@@ -402,18 +427,21 @@ public class Bot {
                     }
                 }
                 if (id == 3) {
-                    if (layakSnowball(freezeMusuh, freezeTeman, maxPts, freezeTime, maxTime)) {
+                    if (layakSnowball(freezeMusuh, freezeTeman, freezeTime, maxTime, totalHealth, maxHealth, maxPts)) {
                         maxPts = 17*(freezeMusuh-freezeTeman);
                         maxTime = freezeTime;
+                        maxHealth = totalHealth;
                         bestPos.x = target.position.x;
                         bestPos.y = target.position.y;
                         // System.out.println("LAYAK DONG DI (" + bestPos.x +", " + bestPos.y +"): " + maxPts +"/" + maxTime);
                     }
                 } else if (id == 2) {
-                    if (layakBanana(attackDmg, countDirt, penaltyDmg, countMusuh, maxPts)) {
+                    if (layakBanana(attackDmg, countDirt, penaltyDmg, countMusuh, totalHealth, maxHealth, maxPts)) {
                         maxPts = 2*(attackDmg+countDirt-penaltyDmg);
+                        maxHealth = totalHealth;
                         bestPos.x = target.position.x;
                         bestPos.y = target.position.y;
+                        // System.out.println("LAYAK DONG DI (" + bestPos.x +", " + bestPos.y +"): " + maxPts +"/" + countMusuh + "/" + attackDmg);
                     }
                 }
             }
@@ -616,10 +644,14 @@ public class Bot {
     }
 
     private Command digAndMoveTo(Cell dest) {
+        Cell path;
         if (dest == null) {
-            return new DoNothingCommand();
+            Worm target = cariMusuhTerdekat();
+            Position goTo = followWorm(target);
+            path = getCellFromCoordinate(goTo.x, goTo.y);
+        } else {
+            path = shortestPath(dest);
         }
-        Cell path = shortestPath(dest);
         if (path.type == CellType.DIRT) {
             return new DigCommand(path.x, path.y);
         } else {
