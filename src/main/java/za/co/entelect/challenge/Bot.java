@@ -61,7 +61,10 @@ public class Bot {
             }
         }
 
-        Worm target = cariMusuhTerdekatGlobal();
+        if (isInEnemyBananaZone(currentWorm) || isInEnemySnowballZone(currentWorm)) {
+            return new DoNothingCommand();
+        }
+        Worm target = getDyingEnemy();
         if (bisaDitembak(currentWorm.position.x, currentWorm.position.y, target.position.x, target.position.y)) {
             Direction direction = resolveDirection(currentWorm.position, target.position);
             return new ShootCommand(direction);
@@ -750,5 +753,96 @@ public class Bot {
         }
 
         return cells.get(0);
+    }
+
+    private Worm getDyingEnemy() {
+        int minHealth = 999;
+        for (Worm enemy : opponent.worms) {
+            if (enemy.health > 0 && enemy.health < minHealth) {
+                minHealth = enemy.health;
+            }
+        }
+        for (Worm enemy : opponent.worms) {
+            if (enemy.health == minHealth) {
+                return enemy;
+            }
+        }
+        return null;
+    }
+
+    private List<Cell> enemyBananaZone() {
+        Worm enemy_agent = null;
+        for(Worm opponent:opponent.worms) {
+            if (opponent.id == 2) {
+                enemy_agent = opponent;
+            }
+        }
+        if (enemy_agent.health > 0) {
+            List<Cell> map_cells = getCells();
+            List<Cell> banana_zone = new ArrayList<>();
+            int enemy_agent_x = enemy_agent.position.x;
+            int enemy_agent_y = enemy_agent.position.y;
+            int banana_range = 5;
+            for (Cell cell : map_cells) {
+                if (euclideanDistance(cell.x, cell.y, enemy_agent_x, enemy_agent_y) <= banana_range) {
+                    banana_zone.add(cell);
+                }
+            }
+            return banana_zone;
+        } else {
+            return null;
+        }
+    }
+
+    private List<Cell> enemySnowballZone() {
+        Worm enemy_tech = null;
+        for (Worm opponent : opponent.worms) {
+            if (opponent.id == 3) {
+                enemy_tech = opponent;
+            }
+        }
+        if (enemy_tech.health > 0) {
+            List<Cell> map_cells = getCells();
+            List<Cell> snowball_zone = new ArrayList<>();
+            int enemy_tech_x = enemy_tech.position.x;
+            int enemy_tech_y = enemy_tech.position.y;
+            int snowball_range = 5;
+            for (Cell cell : map_cells) {
+                if (euclideanDistance(cell.x, cell.y, enemy_tech_x, enemy_tech_y) <= snowball_range) {
+                    snowball_zone.add(cell);
+                }
+            }
+            return snowball_zone;
+        } else {
+            return null;
+        }
+    }
+
+    private boolean isInEnemyBananaZone(Worm myworm) {
+        List<Cell> enemy_banana_zone = enemyBananaZone();
+        if (enemy_banana_zone != null) {
+            for (Cell cell : enemy_banana_zone) {
+                if (cell.x == myworm.position.x && cell.y == myworm.position.y) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean isInEnemySnowballZone(Worm myworm) {
+        List<Cell> enemy_snowball_zone = enemySnowballZone();
+        if (enemy_snowball_zone != null) {
+            for (Cell cell : enemy_snowball_zone) {
+                if (cell.x == myworm.position.x && cell.y == myworm.position.y) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            return false;
+        }
     }
 }
