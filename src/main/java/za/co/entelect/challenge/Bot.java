@@ -616,15 +616,14 @@ public class Bot {
     }
 
     private Command digAndMoveTo(Cell dest) {
-        Cell path = shortestPath(dest);
-        if (path != null) {
-            if (path.type == CellType.DIRT) {
-                return new DigCommand(path.x, path.y);
-            } else {
-                return new MoveCommand(path.x, path.y);
-            }
-        } else {
+        if (dest == null) {
             return new DoNothingCommand();
+        }
+        Cell path = shortestPath(dest);
+        if (path.type == CellType.DIRT) {
+            return new DigCommand(path.x, path.y);
+        } else {
+            return new MoveCommand(path.x, path.y);
         }
     }
 
