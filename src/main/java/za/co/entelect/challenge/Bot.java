@@ -61,9 +61,6 @@ public class Bot {
             }
         }
 
-        if (isInEnemyBananaZone(currentWorm) || isInEnemySnowballZone(currentWorm)) {
-            return new DoNothingCommand();
-        }
         Worm target = getDyingEnemy();
         if (bisaDitembak(currentWorm.position.x, currentWorm.position.y, target.position.x, target.position.y)) {
             Direction direction = resolveDirection(currentWorm.position, target.position);
