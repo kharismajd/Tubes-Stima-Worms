@@ -40,44 +40,85 @@ public class Bot {
         for (int buffer = 0; buffer < 10000000; buffer++) {
             int i = (int) Math.floor(Math.sqrt(buffer+1));
         }
-
-        if (adaBananaBomb(currentWorm)) {
-            Position lempar = greedyLemparan(currentWorm.bananaBombs.range, currentWorm.bananaBombs.damageRadius, currentWorm.bananaBombs.damage, 2);
-            int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
-            if (dist > 0) {
-                if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.bananaBombs.range)) {
-                    // System.out.println("LEMPAR BANANA DONG");
-                    return new BananaCommand(lempar.x, lempar.y);
+        if (gameState.myPlayer.remainingWormSelections == 0 || selectBestWorm() == null) {
+            if (adaBananaBomb(currentWorm)) {
+                Position lempar = greedyLemparan(currentWorm.bananaBombs.range, currentWorm.bananaBombs.damageRadius, currentWorm.bananaBombs.damage, 2);
+                int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
+                if (dist > 0) {
+                    if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.bananaBombs.range)) {
+                        // System.out.println("LEMPAR BANANA DONG");
+                        return new BananaCommand(lempar.x, lempar.y);
+                    }
+                }
+            } else if (adaSnowball(currentWorm)) {
+                Position lempar = greedyLemparan(currentWorm.snowballs.range, currentWorm.snowballs.freezeRadius, 0, 3);
+                int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
+                if (dist > 0) {
+                    if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
+                        // System.out.println("LEMPAR SNOWBALL DONG");
+                        return new SnowballCommand(lempar.x, lempar.y);
+                    }
                 }
             }
-        } else if (adaSnowball(currentWorm)) {
-            Position lempar = greedyLemparan(currentWorm.snowballs.range, currentWorm.snowballs.freezeRadius, 0, 3);
-            int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
-            if (dist > 0) {
-                if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
-                    // System.out.println("LEMPAR SNOWBALL DONG");
-                    return new SnowballCommand(lempar.x, lempar.y);
-                }
-            }
-        }
 
-        Worm target = getDyingEnemy();
-        if (bisaDitembak(currentWorm.position.x, currentWorm.position.y, target.position.x, target.position.y)) {
-            Direction direction = resolveDirection(currentWorm.position, target.position);
-            return new ShootCommand(direction);
-        } else {
-            target = cariTembakTerdekat();
-            if (target != null) {
+            Worm target = getDyingEnemy();
+            if (bisaDitembak(currentWorm.position.x, currentWorm.position.y, target.position.x, target.position.y)) {
                 Direction direction = resolveDirection(currentWorm.position, target.position);
                 return new ShootCommand(direction);
+            } else {
+                target = cariTembakTerdekat(currentWorm);
+                if (target != null) {
+                    Direction direction = resolveDirection(currentWorm.position, target.position);
+                    return new ShootCommand(direction);
+                }
             }
-        }
 
-        target = cariMusuhTerdekatGlobal();
-        if (isNearEnemy(currentWorm, target)) {
-            return digAndMoveTo(getNearestShootingPosition(target));
+            target = cariMusuhTerdekatGlobal();
+            if (isNearEnemy(currentWorm, target)) {
+                return digAndMoveTo(getNearestShootingPosition(target));
+            } else {
+                return digAndMoveTo(getCellFromCoordinate(target.position.x, target.position.y));
+            }
         } else {
-            return digAndMoveTo(getCellFromCoordinate(target.position.x, target.position.y));
+            currentWorm = selectBestWorm();
+            if (adaBananaBomb(currentWorm)) {
+                Position lempar = greedyLemparan(currentWorm.bananaBombs.range, currentWorm.bananaBombs.damageRadius, currentWorm.bananaBombs.damage, 2);
+                int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
+                if (dist > 0) {
+                    if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.bananaBombs.range)) {
+                        // System.out.println("LEMPAR BANANA DONG");
+                        return new SelectCommand(currentWorm.id, new BananaCommand(lempar.x, lempar.y));
+                    }
+                }
+            } else if (adaSnowball(currentWorm)) {
+                Position lempar = greedyLemparan(currentWorm.snowballs.range, currentWorm.snowballs.freezeRadius, 0, 3);
+                int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
+                if (dist > 0) {
+                    if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
+                        // System.out.println("LEMPAR SNOWBALL DONG");
+                        return new SelectCommand(currentWorm.id, new SnowballCommand(lempar.x, lempar.y));
+                    }
+                }
+            }
+
+            Worm target = getDyingEnemy();
+            if (bisaDitembak(currentWorm.position.x, currentWorm.position.y, target.position.x, target.position.y)) {
+                Direction direction = resolveDirection(currentWorm.position, target.position);
+                return new SelectCommand(currentWorm.id, new ShootCommand(direction));
+            } else {
+                target = cariTembakTerdekat(currentWorm);
+                if (target != null) {
+                    Direction direction = resolveDirection(currentWorm.position, target.position);
+                    return new SelectCommand(currentWorm.id, new ShootCommand(direction));
+                }
+            }
+
+            target = cariMusuhTerdekatGlobal();
+            if (isNearEnemy(currentWorm, target)) {
+                return new SelectCommand(currentWorm.id, digAndMoveTo(getNearestShootingPosition(target)));
+            } else {
+                return new SelectCommand(currentWorm.id, digAndMoveTo(getCellFromCoordinate(target.position.x, target.position.y)));
+            }
         }
     }
 
@@ -191,13 +232,13 @@ public class Bot {
         }
     }
 
-    private Worm cariTembakTerdekat() {
+    private Worm cariTembakTerdekat(Worm myWorm) {
         double minDist = pythagoras(gameState.mapSize, gameState.mapSize);
         Worm target = null;
         for (Worm musuh : opponent.worms) {
-            double dist = jarak(currentWorm.position.x, currentWorm.position.y, musuh.position.x, musuh.position.y);
+            double dist = jarak(myWorm.position.x, myWorm.position.y, musuh.position.x, musuh.position.y);
             if (dist <= minDist && musuh.health > 0) {
-                if (bisaDitembak(currentWorm.position.x, currentWorm.position.y, musuh.position.x, musuh.position.y)) {
+                if (bisaDitembak(myWorm.position.x, myWorm.position.y, musuh.position.x, musuh.position.y)) {
                     minDist = dist;
                     target = musuh;
                 }
@@ -843,5 +884,23 @@ public class Bot {
 
     private boolean isNearEnemy(Worm myWorm, Worm enemyWorm) {
         return (euclideanDistance(myWorm.position.x, myWorm.position.y, enemyWorm.position.x, enemyWorm.position.y) <= 5);
+    }
+
+    private MyWorm selectBestWorm() {
+        //Unfrozen dan bisa nembak
+        int count = 0;
+        for (Worm myWorm : gameState.myPlayer.worms) {
+            if (myWorm.roundsUntilUnfrozen == 0 && cariTembakTerdekat(myWorm) != null) {
+                count += 1;
+            }
+        }
+        if (count > 0) {
+            return Arrays.stream(gameState.myPlayer.worms)
+                    .filter(myWorm -> myWorm.roundsUntilUnfrozen == 0 && cariTembakTerdekat(myWorm) != null)
+                    .findFirst()
+                    .get();
+        } else {
+            return null;
+        }
     }
 }
