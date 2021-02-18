@@ -74,7 +74,11 @@ public class Bot {
         }
 
         target = cariMusuhTerdekatGlobal();
-        return digAndMoveTo(getNearestShootingPosition(target));
+        if (isNearEnemy(currentWorm, target)) {
+            return digAndMoveTo(getNearestShootingPosition(target));
+        } else {
+            return digAndMoveTo(getCellFromCoordinate(target.position.x, target.position.y));
+        }
     }
 
     private double jarak(int x1, int y1, int x2, int y2) {
@@ -835,5 +839,9 @@ public class Bot {
         } else {
             return false;
         }
+    }
+
+    private boolean isNearEnemy(Worm myWorm, Worm enemyWorm) {
+        return (euclideanDistance(myWorm.position.x, myWorm.position.y, enemyWorm.position.x, enemyWorm.position.y) <= 5);
     }
 }
