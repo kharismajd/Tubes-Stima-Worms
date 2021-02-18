@@ -890,13 +890,13 @@ public class Bot {
         //Unfrozen dan bisa nembak
         int count = 0;
         for (Worm myWorm : gameState.myPlayer.worms) {
-            if (myWorm.roundsUntilUnfrozen == 0 && cariTembakTerdekat(myWorm) != null) {
+            if (myWorm.roundsUntilUnfrozen == 0 && cariTembakTerdekat(myWorm) != null && myWorm != currentWorm) {
                 count += 1;
             }
         }
         if (count > 0) {
             return Arrays.stream(gameState.myPlayer.worms)
-                    .filter(myWorm -> myWorm.roundsUntilUnfrozen == 0 && cariTembakTerdekat(myWorm) != null)
+                    .filter(myWorm -> myWorm.roundsUntilUnfrozen == 0 && cariTembakTerdekat(myWorm) != null && myWorm != currentWorm)
                     .findFirst()
                     .get();
         } else {
