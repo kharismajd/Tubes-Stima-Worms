@@ -52,18 +52,9 @@ public class Bot {
                 }
             } else if (adaSnowball(currentWorm)) {
                 Position lempar = greedyLemparan(currentWorm.snowballs.range, currentWorm.snowballs.freezeRadius, 0, 3);
-                boolean enemy_is_in_battle = false;
-                List<Cell> snowball_impact = snowballImpact(lempar);
-                for (Cell cell : snowball_impact) {
-                    if (cell.occupier != null) {
-                        if (isEnemyInBattle(cell.occupier)) {
-                            enemy_is_in_battle = true;
-                        }
-                    }
-                }
                 int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
                 if (dist > 0) {
-                    if (enemy_is_in_battle && isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
+                    if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
                         // System.out.println("LEMPAR SNOWBALL DONG");
                         return new SnowballCommand(lempar.x, lempar.y);
                     }
@@ -101,18 +92,9 @@ public class Bot {
                 }
             } else if (adaSnowball(currentWorm)) {
                 Position lempar = greedyLemparan(currentWorm.snowballs.range, currentWorm.snowballs.freezeRadius, 0, 3);
-                boolean enemy_is_in_battle = false;
-                List<Cell> snowball_impact = snowballImpact(lempar);
-                for (Cell cell : snowball_impact) {
-                    if (cell.occupier != null) {
-                        if (isEnemyInBattle(cell.occupier)) {
-                            enemy_is_in_battle = true;
-                        }
-                    }
-                }
                 int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
                 if (dist > 0) {
-                    if (enemy_is_in_battle && isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
+                    if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
                         // System.out.println("LEMPAR SNOWBALL DONG");
                         return new SelectCommand(currentWorm.id, new SnowballCommand(lempar.x, lempar.y));
                     }
@@ -935,17 +917,4 @@ public class Bot {
         }
     }
 
-    private boolean isEnemyInBattle (Worm enemy) {
-        for (Worm myWorm : gameState.myPlayer.worms) {
-            if (myWorm.health > 0) {
-                if (bisaDitembak(myWorm.position.x, myWorm.position.y, enemy.position.x, enemy.position.y)) {
-                    return true;
-                }
-            }
-        }
-        if (bisaDitembak(currentWorm.position.x, currentWorm.position.y, enemy.position.x, enemy.position.y)) {
-            return true;
-        }
-        return false;
-    }
 }
