@@ -40,7 +40,7 @@ public class Bot {
         for (int buffer = 0; buffer < 10000000; buffer++) {
             int i = (int) Math.floor(Math.sqrt(buffer+1));
         }
-        if (gameState.myPlayer.remainingWormSelections == 0 || selectBestWorm() == null) {
+        if (gameState.myPlayer.remainingWormSelections == 0 || selectBestWorm() == null || cariTembakTerdekat(currentWorm) != null) {
             if (adaBananaBomb(currentWorm)) {
                 Position lempar = greedyLemparan(currentWorm.bananaBombs.range, currentWorm.bananaBombs.damageRadius, currentWorm.bananaBombs.damage, 2);
                 int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
