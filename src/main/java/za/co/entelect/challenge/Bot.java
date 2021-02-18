@@ -52,9 +52,18 @@ public class Bot {
                 }
             } else if (adaSnowball(currentWorm)) {
                 Position lempar = greedyLemparan(currentWorm.snowballs.range, currentWorm.snowballs.freezeRadius, 0, 3);
+                boolean enemy_is_in_battle = false;
+                List<Cell> snowball_impact = snowballImpact(lempar);
+                for (Cell cell : snowball_impact) {
+                    if (cell.occupier != null) {
+                        if (isEnemyInBattle(cell.occupier)) {
+                            enemy_is_in_battle = true;
+                        }
+                    }
+                }
                 int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
                 if (dist > 0) {
-                    if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
+                    if (enemy_is_in_battle && isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
                         // System.out.println("LEMPAR SNOWBALL DONG");
                         return new SnowballCommand(lempar.x, lempar.y);
                     }
@@ -92,9 +101,18 @@ public class Bot {
                 }
             } else if (adaSnowball(currentWorm)) {
                 Position lempar = greedyLemparan(currentWorm.snowballs.range, currentWorm.snowballs.freezeRadius, 0, 3);
+                boolean enemy_is_in_battle = false;
+                List<Cell> snowball_impact = snowballImpact(lempar);
+                for (Cell cell : snowball_impact) {
+                    if (cell.occupier != null) {
+                        if (isEnemyInBattle(cell.occupier)) {
+                            enemy_is_in_battle = true;
+                        }
+                    }
+                }
                 int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
                 if (dist > 0) {
-                    if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
+                    if (enemy_is_in_battle && isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
                         // System.out.println("LEMPAR SNOWBALL DONG");
                         return new SelectCommand(currentWorm.id, new SnowballCommand(lempar.x, lempar.y));
                     }
@@ -812,24 +830,24 @@ public class Bot {
         return null;
     }
 
-    private List<Cell> bananaImpact(Worm myworm) {
+    private List<Cell> bananaImpact(Position pos) {
         List<Cell> map_cell = getCells();
         List<Cell> impact_cells = new ArrayList<>();
         int banana_radius = 2;
         for (Cell cell : map_cell) {
-            if (euclideanDistance(myworm.position.x, myworm.position.y, cell.x, cell.y) <= banana_radius) {
+            if (euclideanDistance(pos.x, pos.y, cell.x, cell.y) <= banana_radius) {
                 impact_cells.add(cell);
             }
         }
         return impact_cells;
     }
 
-    private List<Cell> snowballImpact(Worm myworm) {
+    private List<Cell> snowballImpact(Position pos) {
         List<Cell> map_cell = getCells();
         List<Cell> impact_cells = new ArrayList<>();
         int snowball_radius = 1;
         for (Cell cell : map_cell) {
-            if (euclideanDistance(myworm.position.x, myworm.position.y, cell.x, cell.y) <= snowball_radius) {
+            if (euclideanDistance(pos.x, pos.y, cell.x, cell.y) <= snowball_radius) {
                 impact_cells.add(cell);
             }
         }
@@ -844,7 +862,7 @@ public class Bot {
             }
         }
         if (enemy_agent.health > 0) {
-            List<Cell> banana_impact = bananaImpact(myworm);
+            List<Cell> banana_impact = bananaImpact(new Position(myworm.position.x, myworm.position.y));
             int enemy_agent_x = enemy_agent.position.x;
             int enemy_agent_y = enemy_agent.position.y;
             int banana_range = 5;
@@ -867,7 +885,7 @@ public class Bot {
             }
         }
         if (enemy_tech.health > 0) {
-            List<Cell> snowball_impact = snowballImpact(myworm);
+            List<Cell> snowball_impact = snowballImpact(new Position(myworm.position.x, myworm.position.y));
             int enemy_tech_x = enemy_tech.position.x;
             int enemy_tech_y = enemy_tech.position.y;
             int snowball_range = 5;
@@ -887,20 +905,47 @@ public class Bot {
     }
 
     private MyWorm selectBestWorm() {
-        //Unfrozen dan bisa nembak
+        // Unfrozen dan bisa nembak
+        // Jika worm id 2 tidak termasuk, maka akan mengambil id terbesar
+        // Jika worm id 1 atau 3 tida termasuk akan mengambil id terkecil
+        // Agar cycle-nya efektif : 3 -> 1, 1 -> 2, 2 -> 3, dll
+        boolean chooseFirst = true;
         int count = 0;
         for (Worm myWorm : gameState.myPlayer.worms) {
-            if (myWorm.roundsUntilUnfrozen == 0 && cariTembakTerdekat(myWorm) != null && myWorm != currentWorm) {
+            if (myWorm.roundsUntilUnfrozen == 0 && cariTembakTerdekat(myWorm) != null && myWorm != currentWorm && myWorm.health > 0) {
                 count += 1;
+            } else if (myWorm.id == 2) {
+                chooseFirst = false;
             }
         }
         if (count > 0) {
-            return Arrays.stream(gameState.myPlayer.worms)
-                    .filter(myWorm -> myWorm.roundsUntilUnfrozen == 0 && cariTembakTerdekat(myWorm) != null && myWorm != currentWorm)
-                    .findFirst()
-                    .get();
+            if (chooseFirst) {
+                return Arrays.stream(gameState.myPlayer.worms)
+                        .filter(myWorm -> myWorm.roundsUntilUnfrozen == 0 && cariTembakTerdekat(myWorm) != null && myWorm != currentWorm && myWorm.health > 0)
+                        .findFirst()
+                        .get();
+            } else {
+                return Arrays.stream(gameState.myPlayer.worms)
+                        .filter(myWorm -> myWorm.roundsUntilUnfrozen == 0 && cariTembakTerdekat(myWorm) != null && myWorm != currentWorm && myWorm.health > 0)
+                        .reduce((first, second) -> second)
+                        .get();
+            }
         } else {
             return null;
         }
+    }
+
+    private boolean isEnemyInBattle (Worm enemy) {
+        for (Worm myWorm : gameState.myPlayer.worms) {
+            if (myWorm.health > 0) {
+                if (bisaDitembak(myWorm.position.x, myWorm.position.y, enemy.position.x, enemy.position.y)) {
+                    return true;
+                }
+            }
+        }
+        if (bisaDitembak(currentWorm.position.x, currentWorm.position.y, enemy.position.x, enemy.position.y)) {
+            return true;
+        }
+        return false;
     }
 }
