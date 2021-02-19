@@ -34,9 +34,6 @@ public class Bot {
     /* Yang ori mulai dari sini */
 
     public Command run() {
-        for (int buffer = 0; buffer < 10000000; buffer++) {
-            int i = (int) Math.floor(Math.sqrt(buffer+1));
-        }
         if (gameState.myPlayer.remainingWormSelections == 0 || selectBestWorm() == null || cariTembakTerdekat(currentWorm) != null) {
             if (adaBananaBomb(currentWorm)) {
                 Position lempar = greedyLemparan(currentWorm.bananaBombs.range, currentWorm.bananaBombs.damageRadius, currentWorm.bananaBombs.damage, 2);
@@ -304,7 +301,7 @@ public class Bot {
         boolean layakPts = (2*(totalDamage+dirt-friendlyFire) > curr_max);
         boolean equalPts = (2*(totalDamage+dirt-friendlyFire) == curr_max);
         boolean layakHealth = tot_health > health_max;
-        boolean healthThreshold = currentWorm.health <= 30;
+        boolean healthThreshold = currentWorm.health <= 40;
         if (healthThreshold && layakDamage) {
             return true;
         } else if (!(layakDamage && layakJml) && (earlyGame || !dalamBahaya(currentWorm))) {
