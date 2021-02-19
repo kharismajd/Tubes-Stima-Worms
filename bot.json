@@ -1,8 +1,8 @@
 {
-	"author": “Bebass",
-	"email": “13519176@std.stei.itb.ac.did,
-	"nickName": “Bebass”,
+	"author": "Bebass",
+	"email": "13519176@std.stei.itb.ac.id",
+	"nickName": "Bebass",
 	"botLocation": "/target",
-	"botFileName": "java-sample-bot-jar-with-dependencies.jar",
+	"botFileName": "Bebass-jar-with-dependencies",
 	"botLanguage": "java"
 }
