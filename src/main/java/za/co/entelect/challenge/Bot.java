@@ -52,9 +52,13 @@ public class Bot {
                 }
             } else if (adaSnowball(currentWorm)) {
                 Position lempar = greedyLemparan(currentWorm.snowballs.range, currentWorm.snowballs.freezeRadius, 0, 3);
+                boolean in_battle = false;
+                if (bisaDitembak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y)) {
+                    in_battle = true;
+                }
                 int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
                 if (dist > 0) {
-                    if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
+                    if (in_battle && isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
                         // System.out.println("LEMPAR SNOWBALL DONG");
                         return new SnowballCommand(lempar.x, lempar.y);
                     }
@@ -92,9 +96,13 @@ public class Bot {
                 }
             } else if (adaSnowball(currentWorm)) {
                 Position lempar = greedyLemparan(currentWorm.snowballs.range, currentWorm.snowballs.freezeRadius, 0, 3);
+                boolean in_battle = false;
+                if (bisaDitembak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y)) {
+                    in_battle = true;
+                }
                 int dist = (int) Math.round(jarak(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y));
                 if (dist > 0) {
-                    if (isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
+                    if (in_battle && isDalamRangeLemparan(currentWorm.position.x, currentWorm.position.y, lempar.x, lempar.y, currentWorm.snowballs.range)) {
                         // System.out.println("LEMPAR SNOWBALL DONG");
                         return new SelectCommand(currentWorm.id, new SnowballCommand(lempar.x, lempar.y));
                     }
@@ -323,19 +331,23 @@ public class Bot {
         return (int) Math.round(damage-dist*(damage/(radius+1)));
     }
 
-    private boolean layakSnowball(int jmlMusuh, int jmlTeman, int add_time, int time_max, int tot_health, int health_max, int curr_max) {
+    private boolean layakSnowball(int jmlMusuh, int jmlTeman, int add_time, int time_max, int tot_health, int health_max, int curr_max, Worm target) {
+        boolean enemy_in_battle = isEnemyInBattle(target);
         boolean layakJml = jmlMusuh > jmlTeman;
         boolean layakTime = add_time > time_max;
         boolean equalTime = add_time == time_max;
         boolean layakPts = (17*(jmlMusuh-jmlTeman)) > curr_max;
         boolean equalPts = (17*(jmlMusuh-jmlTeman)) == curr_max;
         boolean layakHealth = tot_health > health_max;
-        if (layakJml && layakPts) {
+        boolean healthThreshold = currentWorm.health <= 50;
+        if (healthThreshold && enemy_in_battle && layakJml && layakTime) {
             return true;
-        } else if (layakJml && equalPts && layakTime) {
+        } else if (enemy_in_battle && layakJml && layakPts && layakTime) {
+            return true;
+        } else if (enemy_in_battle && layakJml && equalPts && layakTime) {
             return true;
         } else {
-            return (layakJml && equalPts && equalTime && layakHealth);
+            return (enemy_in_battle && layakJml && equalPts && equalTime && layakHealth);
         }
     }
 
@@ -352,7 +364,10 @@ public class Bot {
         boolean layakPts = (2*(totalDamage+dirt-friendlyFire) > curr_max);
         boolean equalPts = (2*(totalDamage+dirt-friendlyFire) == curr_max);
         boolean layakHealth = tot_health > health_max;
-        if (!(layakDamage && layakJml) && (earlyGame || !dalamBahaya(currentWorm))) {
+        boolean healthThreshold = currentWorm.health <= 30;
+        if (healthThreshold && layakDamage) {
+            return true;
+        } else if (!(layakDamage && layakJml) && (earlyGame || !dalamBahaya(currentWorm))) {
             return false;
         } else if (layakPts && layakDamage && layakJml) {
             return true;
@@ -450,8 +465,10 @@ public class Bot {
                     } else if (bisaDilempar(impact.x, impact.y)) {
                         for (Worm musuh : opponent.worms) {
                             if (musuh.health > 0 && musuh.position.x == impact.x && musuh.position.y == impact.y) {
-                                freezeTime += 5-musuh.roundsUntilUnfrozen;
-                                freezeMusuh += 1;
+                                if (musuh.roundsUntilUnfrozen == 0) {
+                                    freezeMusuh += 1;
+                                    freezeTime += 5-musuh.roundsUntilUnfrozen;
+                                }
                                 countMusuh += 1;
                                 totalHealth += musuh.health;
                                 attackDmg += BananaBombDmg(target.position.x-impact.x,target.position.y-impact.y, damage, radius);
@@ -472,7 +489,7 @@ public class Bot {
                     }
                 }
                 if (id == 3) {
-                    if (layakSnowball(freezeMusuh, freezeTeman, freezeTime, maxTime, totalHealth, maxHealth, maxPts)) {
+                    if (layakSnowball(freezeMusuh, freezeTeman, freezeTime, maxTime, totalHealth, maxHealth, maxPts, target)) {
                         maxPts = 17*(freezeMusuh-freezeTeman);
                         maxTime = freezeTime;
                         maxHealth = totalHealth;
@@ -917,4 +934,14 @@ public class Bot {
         }
     }
 
+    private boolean isEnemyInBattle (Worm enemy) {
+        for (Worm myWorm : gameState.myPlayer.worms) {
+            if (myWorm.health > 0) {
+                if (bisaDitembak(myWorm.position.x, myWorm.position.y, enemy.position.x, enemy.position.y)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
