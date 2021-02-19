@@ -6,21 +6,18 @@ import za.co.entelect.challenge.enums.CellType;
 import za.co.entelect.challenge.enums.Direction;
 
 import java.util.*;
-import java.io.*;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.swap;
 
 public class Bot {
 
-    private Random random;
     private GameState gameState;
     private Opponent opponent;
     private MyWorm currentWorm;
     private List<Cell> gameCells;
 
     public Bot(Random random, GameState gameState) {
-        this.random = random;
         this.gameState = gameState;
         this.opponent = gameState.opponents[0];
         this.currentWorm = getCurrentWorm(gameState);
@@ -152,42 +149,6 @@ public class Bot {
         return (isValidCell(targetX, targetY) && !(targetX == wormX && targetY == wormY) && Math.floor(jarak(wormX, wormY, targetX, targetY)) <= range);
     }
 
-    private List<Cell> dalamRangeTembakan(int range) {
-        List<Cell> cellTembakan = new ArrayList<>();
-        int worm_x = currentWorm.position.x;
-        int worm_y = currentWorm.position.y;
-
-        for (int i = 1; i <= range; i++) {
-            for (int deltaY = -1; deltaY <= 1; deltaY++) {
-                for (int deltaX = -1; deltaX <= 1; deltaX++) {
-                    if (isDalamRangeTembakan(worm_x, worm_y, deltaX*i, deltaY*i, range)) {
-                        int cell_x = worm_x + deltaX;
-                        int cell_y = worm_y + deltaY;
-                        cellTembakan.add(gameState.map[cell_y][cell_x]);
-                    }
-                }
-            }
-        }
-
-        return cellTembakan;
-    }
-
-    private List<Cell> dalamRangeLemparan(int range) {
-        List<Cell> cellLemparan = new ArrayList<>();
-        int worm_x = currentWorm.position.x;
-        int worm_y = currentWorm.position.y;
-
-        for (int j = worm_y-range; j <= worm_y+range; j++) {
-            for (int i = worm_x-range; i <= worm_x+range; i++) {
-                if (isDalamRangeLemparan(worm_x, worm_y, i, j, range)) {
-                    cellLemparan.add(gameState.map[j][i]);
-                }
-            }
-        }
-
-        return cellLemparan;
-    }
-
     private boolean bisaDitembak(int wormX, int wormY, int targetX, int targetY) {
         int deltaX = targetX-wormX;
         int deltaY = targetY-wormY;
@@ -249,27 +210,6 @@ public class Bot {
                 if (bisaDitembak(myWorm.position.x, myWorm.position.y, musuh.position.x, musuh.position.y)) {
                     minDist = dist;
                     target = musuh;
-                }
-            }
-        }
-
-        return target;
-    }
-
-    private Worm cariTembakTerdekatGlobal() {
-        double minDist = 3*pythagoras(gameState.mapSize, gameState.mapSize);
-        Worm target = null;
-        for (Worm musuh : opponent.worms) {
-            double dist = 0;
-            for (Worm teman : gameState.myPlayer.worms) {
-                dist += jarak(teman.position.x, teman.position.y, musuh.position.x, musuh.position.y);
-            }
-            if (dist <= minDist && musuh.health > 0) {
-                for (Worm teman : gameState.myPlayer.worms) {
-                    if (bisaDitembak(teman.position.x, teman.position.y, musuh.position.x, musuh.position.y)) {
-                        minDist = dist;
-                        target = musuh;
-                    }
                 }
             }
         }
@@ -396,58 +336,6 @@ public class Bot {
         int maxTime = 0;
         int maxHealth = 0;
 
-        /* GREEDY VERSION 1
-        List<Cell> cellLemparan = dalamRangeLemparan(range);
-        for (Cell target : cellLemparan) {
-            List<Cell> cellImpact = dalamRadiusLemparan(target.x, target.y, radius);
-            int freezeTeman = 0;
-            int penaltyDmg = 0;
-            int freezeMusuh = 0;
-            int attackDmg = 0;
-            int countDirt = 0;
-            for (Cell impact : cellImpact) {
-                if (gameState.map[impact.y][impact.x].type == CellType.DIRT) {
-                    countDirt += 1;
-                } else if (bisaDilempar(impact.x, impact.y)) {
-                    for (Worm musuh : opponent.worms) {
-                        if (musuh.health > 0 && musuh.position.x == impact.x && musuh.position.y == impact.y) {
-                            if (musuh.roundsUntilUnfrozen <= 1) {
-                                freezeMusuh += 1;
-                            }
-                            attackDmg += BananaBombDmg(target.x-impact.x,target.y-impact.y, damage, radius);
-                            if (attackDmg > musuh.health) {
-                                attackDmg += 20;
-                            }
-                        }
-                    }
-                    for (Worm teman : gameState.myPlayer.worms) {
-                        if (teman.health > 0 && teman.position.x == target.x && teman.position.y == target.y) {
-                            freezeTeman += 1;
-                            penaltyDmg += BananaBombDmg(target.x-impact.x,target.y-impact.y, damage, radius);
-                            if (penaltyDmg > teman.health) {
-                                penaltyDmg += 20;
-                            }
-                        }
-                    }
-                }
-            }
-            if (id == 3) {
-                if (layakSnowball(freezeMusuh, freezeTeman, maxPts)) {
-                    maxPts = 17*(freezeMusuh-freezeTeman);
-                    bestPos.x = target.x;
-                    bestPos.y = target.y;
-                }
-            } else if (id == 2) {
-                if (layakBanana(attackDmg, countDirt, penaltyDmg, countMusuh, maxPts)) {
-                    maxPts = 2*(attackDmg+countDirt-penaltyDmg);
-                    bestPos.x = target.x;
-                    bestPos.y = target.y;
-                }
-            }
-        } */
-
-        /* GREEDY VERSION 2 */
-
         for (Worm target : opponent.worms) {
             if (target.health > 0) {
                 int freezeTeman = 0;
@@ -520,29 +408,7 @@ public class Bot {
         return new Position(goToX, goToY);
     }
 
-    private Position jalanKe(int targetX, int targetY) {
-        Cell target = getCellFromCoordinate(targetX, targetY);
-        Cell destination = shortestPath(target);
-        int wormX = destination.x;
-        int wormY = destination.y;
-        return new Position(wormX, wormY);
-    }
-
     /* Yang copy mentah dari Bot.java */
-
-    private List<Cell> getSurroundingCells(int x, int y) {
-        ArrayList<Cell> cells = new ArrayList<>();
-        for (int i = x - 1; i <= x + 1; i++) {
-            for (int j = y - 1; j <= y + 1; j++) {
-                // Don't include the current position
-                if (i != x && j != y && isValidCell(i, j)) {
-                    cells.add(gameState.map[j][i]);
-                }
-            }
-        }
-
-        return cells;
-    }
 
     private Direction resolveDirection(Position a, Position b) {
         StringBuilder builder = new StringBuilder();
@@ -564,32 +430,6 @@ public class Bot {
 
         return Direction.valueOf(builder.toString());
     }
-
-    /* Tambahan dari Alif */
-    /* Cek keberadaan lava */
-    private boolean lavaAdjacent(Cell block) {
-        return (block.type == CellType.LAVA);
-    }
-    /* Cek arah yang dituju kosong / ada tanah */
-    private boolean airAdjacent(Cell block) {
-        return (block.type == CellType.AIR);
-    }
-
-    /* Cek ada dirt di depan */
-    private boolean dirtAdjacent(Cell block) {
-        return (block.type == CellType.DIRT);
-    }
-
-    /* Cek profesi musuh terdekat */
-    //private int nearestEnemyProfession() {
-      //  int[] jarak = new int[3];
-        //int jarak1 = euclideanDistance(currentWorm.position.x,currentWorm.position.y,);
-        // Implementasi tambahan nanti, masih kesulitan disini
-    //}
-
-    /* Cek musuh terdekat masih frozen */
-    // Setelah dipikir-pikir, ini unapplicable karena
-    // ga ada state yg menyimpan kondisi musuh beku atau nggak
     
     /* Tambahan kharisma */
     private List<Cell> getCells() {
@@ -721,31 +561,6 @@ public class Bot {
         }
     }
 
-    private boolean isPowerupExist() {
-        return gameCells.stream().anyMatch(c -> c.powerUp != null);
-    }
-
-    private Command moveToPowerUp() {
-        boolean sorted = false;
-        ArrayList<Double> distance = new ArrayList<>();
-        List<Cell> dest = gameCells.stream().filter(c -> c.powerUp != null).collect(Collectors.toList());
-        for (Cell d:dest) {
-            distance.add(doubleEuclideanDistance(currentWorm.position.x, currentWorm.position.y, d.x, d.y));
-        }
-        while(!sorted) {
-            sorted = true;
-            for (int i = 0; i < dest.size() - 1; i++) {
-                if (distance.get(i) > distance.get(i+1)) {
-                    swap(distance, i, i + 1);
-                    swap(dest, i, i + 1);
-                    sorted = false;
-                }
-            }
-        }
-
-        return digAndMoveTo(dest.get(0));
-    }
-
     private List<Cell> getShootingPosition(Worm target) {
         ArrayList<ArrayList<Cell>> cells = new ArrayList<ArrayList<Cell>>();
         ArrayList<Position> dir = new ArrayList<>();
@@ -827,76 +642,6 @@ public class Bot {
             }
         }
         return null;
-    }
-
-    private List<Cell> bananaImpact(Position pos) {
-        List<Cell> map_cell = getCells();
-        List<Cell> impact_cells = new ArrayList<>();
-        int banana_radius = 2;
-        for (Cell cell : map_cell) {
-            if (euclideanDistance(pos.x, pos.y, cell.x, cell.y) <= banana_radius) {
-                impact_cells.add(cell);
-            }
-        }
-        return impact_cells;
-    }
-
-    private List<Cell> snowballImpact(Position pos) {
-        List<Cell> map_cell = getCells();
-        List<Cell> impact_cells = new ArrayList<>();
-        int snowball_radius = 1;
-        for (Cell cell : map_cell) {
-            if (euclideanDistance(pos.x, pos.y, cell.x, cell.y) <= snowball_radius) {
-                impact_cells.add(cell);
-            }
-        }
-        return impact_cells;
-    }
-
-    private boolean isInEnemyBananaZone(Worm myworm) {
-        Worm enemy_agent = null;
-        for(Worm opponent:opponent.worms) {
-            if (opponent.id == 2) {
-                enemy_agent = opponent;
-            }
-        }
-        if (enemy_agent.health > 0) {
-            List<Cell> banana_impact = bananaImpact(new Position(myworm.position.x, myworm.position.y));
-            int enemy_agent_x = enemy_agent.position.x;
-            int enemy_agent_y = enemy_agent.position.y;
-            int banana_range = 5;
-            for (Cell cell : banana_impact) {
-                if (euclideanDistance(cell.x, cell.y, enemy_agent_x, enemy_agent_y) <= banana_range) {
-                    return true;
-                }
-            }
-            return false;
-        } else {
-            return false;
-        }
-    }
-
-    private boolean isInEnemySnowballZone(Worm myworm) {
-        Worm enemy_tech = null;
-        for(Worm opponent:opponent.worms) {
-            if (opponent.id == 3) {
-                enemy_tech = opponent;
-            }
-        }
-        if (enemy_tech.health > 0) {
-            List<Cell> snowball_impact = snowballImpact(new Position(myworm.position.x, myworm.position.y));
-            int enemy_tech_x = enemy_tech.position.x;
-            int enemy_tech_y = enemy_tech.position.y;
-            int snowball_range = 5;
-            for (Cell cell : snowball_impact) {
-                if (euclideanDistance(cell.x, cell.y, enemy_tech_x, enemy_tech_y) <= snowball_range) {
-                    return true;
-                }
-            }
-            return false;
-        } else {
-            return false;
-        }
     }
 
     private boolean isNearEnemy(Worm myWorm, Worm enemyWorm) {
