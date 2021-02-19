@@ -1,4 +1,9 @@
-# Java starter bot
+# Tubes 1 Stima - K04/G10
+
+## Penjelasan Algoritma Greedy
+
+Algoritma Greedy yang digunakan ialah algoritma yang
+memprioritaskan _command_ terbaik dalam satu _turn_.
 
 ## Environment requirements
 
@@ -9,12 +14,15 @@ Make sure JAVA_HOME system variable is set, Windows 10 tutorial here: https://ww
 Install IntelliJ IDEA here: https://www.jetbrains.com/idea/download/
 The community edition is free.
 
-## Building
+## Cara menggunakan program
 
-Make your modifications to the starter bot using IntelliJ. Once you are happy with your changes, package your bot by opening up the "Maven Projects" tab on the right side of the screen. From here go to the  "java-sample-bot" > "Lifecycle" group and double-click "Install"
-This  will create a .jar file in the folder called "target". The file will be called "java-sample-bot-jar-with-dependencies.jar".
+1. Copas bin ke src -> java -> ... -> target
+2. Ubah setting pada game_runner_config ke starter-bots/java
+3. Run run.bat (Diasumsikan Anda sudah punya Game Engine Entelect Challenge 2019), lalu tonton
+4. Untuk penampilan yang lebih bagus, salin match-logs terbaru ke Visualizer/matches, lalu jalankan Visualizer di start-visualiser.bat
 
-## Running 
+## Author
 
-To run the bot, copy the file "java-sample-bot-jar-with-dependencies.jar" to a different location. Then go to the starter-pack and edit the config.json file accordingly.
-Then run the "run.bat" file on windows or the "run.sh" file for unix.
+* 13519176 - Made Kharisma J.
+* 13519205 - M. Rifat Abiwardani
+* 13519221 - Allief Nuriman
